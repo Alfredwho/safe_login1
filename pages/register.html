@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <style type="text/css">
+        * {
+            margin:0;
+            padding:0;
+            box-sizing: border-box;
+        }
+
+        input,
+        button {
+            outline:0;
+            border:0;
+        }
+
+        body {
+            background-color:#f9fafc;
+        }
+
+        .login_box {
+            height: 750px;
+            width: 400px;
+            margin: 100px auto;
+            padding: 30px 30px 0 30px;
+            box-shadow: 1px 2px 15px #cccccc;
+            border-radius: 6px;
+        }
+
+        .title {
+            text-align:center;
+        }
+
+        .login_box p label {
+            color:#cccccc;
+        }
+
+        .login_box form p {
+            margin-top:30px;
+        }
+
+        .login_box form input[type^='text'],
+        .login_box form input[type^='email'],
+        .login_box form input[type^='password'] {
+            border-radius: 3px;
+            width: 313px;
+            height: 34px;
+            padding: 10px 0 10px 10px;
+            margin-top:5px;
+            color: #0C0C0C;
+            border:1px solid #cccccc;
+        }
+
+        .login {
+            width:313px;
+            height:40px;
+            border-radius: 7px;
+            background-color: #3598d9;
+            color:white;
+            margin-top: 35px;
+            font-size:14px;
+            cursor: pointer;
+        }
+
+
+        .inner_c {
+            width: 1024px;
+            margin: 0 auto;
+        }
+
+        ul li {
+            list-style: none;
+        }
+
+        a {
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .header {
+            width: 100%;
+            height: 50px;
+            background-color: #000;
+        }
+
+        .header .inner_c {
+            height: 100%;
+        }
+
+        .header ul {
+            display: flex;
+            height: 100%;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header ul li :hover {
+            color: cornflowerblue;
+        }
+
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="inner_c">
+        <ul>
+            <li><a href="index.php">Main</a></li>
+            <?php
+            session_start();
+            if(empty($_SESSION['user'])) {
+                ?>
+            <li><a href="login.php">Login</a></li>
+            <li><a href="register.php">Register</a></li>
+            <?php
+            } else {
+                ?>
+            <li><a href="comment.php">Comment</a></li>
+            <li><a href="logout.php">Logout</a></li>
+            <?php
+            }
+            ?>
+
+            <?php if(!empty($_SESSION['user']['role']) && ( $_SESSION['user']['role']== 2)): ?>
+            <li><a href="list.php">CommentList</a></li>
+            <?php endif; ?>
+        </ul>
+    </div>
+</div>
+<div class="login_box">
+    <h2 class="title">Register With Us</h2>
+    <form>
+        <p>
+            <label>Username</label>
+            <input type="text" name="username" value="" placeholder="Enter username" />
+        </p>
+
+        <p>
+            <label>nickname</label>
+            <input type="text" name="nickname" value="" placeholder="Enter nickname" />
+        </p>
+
+        <p>
+            <label>Email</label>
+            <input type="email" name="email" value="" placeholder="Enter email" />
+        </p>
+
+        <p>
+            <label>Phone</label>
+            <input type="text" name="phone" value="" placeholder="Enter phone" />
+        </p>
+
+        <p>
+            <label>Password</label>
+            <input type="password" onblur="checkPwd()" name="password" value="" placeholder="Enter password" />
+            <span id="tips" style="color: red; font-size: 12px; display: none"></span>
+        </p>
+
+        <p>
+            <label>Role</label>
+            <br/>
+            <input type="radio" value="2" name="role" checked /> User
+            <input type="radio" value="1" name="role" style="margin-left: 20px;" /> Admin
+        <p><a href="Login.php" style="float: right; font-size: 14px; text-decoration: none; color: cornflowerblue;">go to Login</a></p>
+        </p>
+    </form>
+    <button class="login">Register</button>
+</div>
+</body>
+</html>
+<script type="text/javascript" src="./jquery.js"></script>
+<script type="text/javascript" src="./lib/layui.js"></script>
+<script type="text/javascript" src="./lib/jsencrypt/bin/jsencrypt.js"></script>
+<script type="text/javascript">
+    let pwdResult = false
+    function checkPwd() {
+        const pwd = $("input[name='password']").val()
+        if (pwd.length < 6) {
+            pwdResult = false
+            return $("#tips").css('display','block')
+                .text('Password length needs 6 digits')
+        }
+        if (!/[A-Z]+/.test(pwd) || !/\d+/.test(pwd)) {
+            pwdResult = false
+            return $("#tips").css('display','block')
+                .text('Password needs to contain case and number')
+        }
+
+        pwdResult = true
+        $("#tips").css('display','none').text('')
+    }
+
+    $(function() {
+        $(".login").on('click', function (e) {
+            const username = $("input[name='username']").val()
+            const password = $("input[name='password']").val()
+            const nickname = $("input[name='nickname']").val()
+            const email = $("input[name='email']").val()
+            const phone = $("input[name='phone']").val()
+            const role = $("input[name='role']:checked").val()
+            if (!pwdResult) {
+                return layui.layer.msg('Password needs to contain case and number')
+            }
+            $.ajax({
+                url: 'publicKey.php',
+                method: 'GET',
+                dataType: 'JSON',
+                success: function (resp) {
+                    const publicKey = resp.data.publicKey
+                    let encrypt = new JSEncrypt()
+                    encrypt.setPublicKey(publicKey)
+                    const pass = encrypt.encrypt(password);
+
+                    $.ajax({
+                        url: 'register.php',
+                        method: 'POST',
+                        dataType: 'JSON',
+                        data: {
+                            username,
+                            email,
+                            phone,
+                            nickname,
+                            role,
+                            password: pass
+                        },
+                        success: function (resp) {
+                            if (resp.code !== '000'){
+                                $("input[name='password']").val('')
+                                return layer.msg(resp.message)
+                            }
+                            $("input[name='password']").val(pass)
+                            layer.msg('register success',{
+                                icon: 1,
+                                time: 1000
+                            })
+                            window.location.href = 'login.php'
+                        }
+                    })
+                }
+            })
+        })
+    })
+</script>
